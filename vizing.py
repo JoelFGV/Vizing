@@ -13,11 +13,11 @@ class Vizing:
         for aresta_atual in arestas:
             vertice_u = aresta_atual[0]
             
-            # Caso 1: tenta colorir diretamente
+            # Tenta colorir diretamente
             if self.colorir_diretamente(aresta_atual):
                 continue
             
-            # Caso 2: cria fan e trata situação conforme tipo
+            # Cria fan e trata situação conforme tipo
             fan, caso = self.criar_fan(aresta_atual)
             if caso == 1:  # Último vértice do fan tem cor livre comum com u
                 self.trocar_cores_fan(vertice_u, fan)
