@@ -8,7 +8,7 @@ class Vizing:
         # Inicializa o estado da coloração
         self.arestas_cor = {aresta: None for aresta in arestas}
         self.cores_livres = self.obter_cores_livres(vertices, cores)
-        self.cores_vizinhas = self.obter_cores_vizinhas(vertices, cores)
+        self.vertices_vizinhos = self.obter_estrutura_vertices_vizinhos(vertices, cores)
 
         # Processa cada aresta seguindo os casos do algoritmo
         for aresta_atual in arestas:
@@ -43,27 +43,30 @@ class Vizing:
         vertice_u, vertice_v = aresta
         
         fan = [vertice_v]
+        fan_set = set([vertice_v])
         fan_cores_arestas = set()
         
         # Expande o fan conforme a definição do algoritmo
         while True:
             primeira_cor_livre = self.obter_primeira_cor_livre(fan[-1])
-            if primeira_cor_livre in fan_cores_arestas: # MODO 1
-                caso = 2 # Cor já usada no fan, não precisa expandir mais
-                break
             
-            vizinhos_candidatos = self.cores_vizinhas[vertice_u][primeira_cor_livre]
+            vizinhos_candidatos = self.vertices_vizinhos[vertice_u][primeira_cor_livre]
             if vizinhos_candidatos:
                 vizinho_w = next(iter(vizinhos_candidatos))
 
                 fan.append(vizinho_w)
+                fan_set.add(vizinho_w)
                 fan_cores_arestas.add(primeira_cor_livre)
             else:
-                caso = 1 # Tem com livre comum
+                caso = 2 # Não foi possível expandir mais
                 break
             
             if self.obter_cor_livre_comum(vertice_u, fan[-1]) is not None:
                 caso = 1 # Achou cor livre comum
+                break
+
+            if self.cores_livres[fan[-1]].intersection(fan_cores_arestas): # MODO 2
+                caso = 2 # Tem aresta no fan igual a cor livre do último vértice
                 break
             
         return (tuple(fan), caso)
@@ -107,7 +110,7 @@ class Vizing:
             cor_procurada = cores_selecionadas[cor_atual_i]
             cor_atual_i = 1 - cor_atual_i
             
-            vizinhos_candidatos = self.cores_vizinhas[vertice_atual][cor_procurada]
+            vizinhos_candidatos = self.vertices_vizinhos[vertice_atual][cor_procurada]
             if vizinhos_candidatos:
                 vizinho_x = next(iter(vizinhos_candidatos))
                 aresta_ax = self.obter_aresta_valida(vertice_atual, vizinho_x)
@@ -155,15 +158,15 @@ class Vizing:
             cores_livres_u.add(cor_atual)
             cores_livres_v.add(cor_atual)
             
-            self.cores_vizinhas[vertice_u][cor_atual].discard(vertice_v)
-            self.cores_vizinhas[vertice_v][cor_atual].discard(vertice_u)
+            self.vertices_vizinhos[vertice_u][cor_atual].discard(vertice_v)
+            self.vertices_vizinhos[vertice_v][cor_atual].discard(vertice_u)
         
         if nova_cor is not None:
             cores_livres_u.discard(nova_cor)
             cores_livres_v.discard(nova_cor)
             
-            self.cores_vizinhas[vertice_u][nova_cor].add(vertice_v)
-            self.cores_vizinhas[vertice_v][nova_cor].add(vertice_u)
+            self.vertices_vizinhos[vertice_u][nova_cor].add(vertice_v)
+            self.vertices_vizinhos[vertice_v][nova_cor].add(vertice_u)
 
         self.arestas_cor[aresta] = nova_cor
         return cor_atual
@@ -197,10 +200,10 @@ class Vizing:
         return {vertice: cores.copy() for vertice in vertices}
     
     @staticmethod
-    def obter_cores_vizinhas(vertices, cores):
+    def obter_estrutura_vertices_vizinhos(vertices, cores):
         """Constrói dicionário: vértice → conjunto de vizinhos."""
         
-        cores_vizinhas = {}
+        vertices_vizinhos = {} # {vertice: {cor: {vizinhos}, ...}, ...}
         for vertice in vertices:
-            cores_vizinhas[vertice] = {cor: set() for cor in cores}
-        return cores_vizinhas
+            vertices_vizinhos[vertice] = {cor: set() for cor in cores}
+        return vertices_vizinhos
