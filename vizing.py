@@ -49,10 +49,13 @@ class Vizing:
         # Expande o fan conforme a definição do algoritmo
         while True:
             primeira_cor_livre = self.obter_primeira_cor_livre(fan[-1])
+            if primeira_cor_livre in fan_cores_arestas:
+                caso = 2 # Tem aresta no fan com cor igual a primeira cor livre do ultimo vertice
+                break
             
-            vizinhos_candidatos = self.vertices_vizinhos[vertice_u][primeira_cor_livre]
-            if vizinhos_candidatos:
-                vizinho_w = next(iter(vizinhos_candidatos))
+            vizinho_candidato = self.vertices_vizinhos[vertice_u][primeira_cor_livre]
+            if vizinho_candidato is not None:
+                vizinho_w = vizinho_candidato
 
                 fan.append(vizinho_w)
                 fan_set.add(vizinho_w)
@@ -65,10 +68,6 @@ class Vizing:
                 caso = 1 # Achou cor livre comum
                 break
 
-            if self.cores_livres[fan[-1]].intersection(fan_cores_arestas): # MODO 2
-                caso = 2 # Tem aresta no fan igual a cor livre do último vértice
-                break
-            
         return (tuple(fan), caso)
             
     def trocar_cores_fan(self, vertice_u, fan):
@@ -110,9 +109,9 @@ class Vizing:
             cor_procurada = cores_selecionadas[cor_atual_i]
             cor_atual_i = 1 - cor_atual_i
             
-            vizinhos_candidatos = self.vertices_vizinhos[vertice_atual][cor_procurada]
-            if vizinhos_candidatos:
-                vizinho_x = next(iter(vizinhos_candidatos))
+            vizinho_candidato = self.vertices_vizinhos[vertice_atual][cor_procurada]
+            if vizinho_candidato is not None:
+                vizinho_x = vizinho_candidato
                 aresta_ax = self.obter_aresta_valida(vertice_atual, vizinho_x)
                 caminho.append(aresta_ax)
                 self.colorir_aresta(aresta_ax, None)
@@ -158,15 +157,15 @@ class Vizing:
             cores_livres_u.add(cor_atual)
             cores_livres_v.add(cor_atual)
             
-            self.vertices_vizinhos[vertice_u][cor_atual].discard(vertice_v)
-            self.vertices_vizinhos[vertice_v][cor_atual].discard(vertice_u)
+            self.vertices_vizinhos[vertice_u][cor_atual] = None
+            self.vertices_vizinhos[vertice_v][cor_atual] = None
         
         if nova_cor is not None:
             cores_livres_u.discard(nova_cor)
             cores_livres_v.discard(nova_cor)
             
-            self.vertices_vizinhos[vertice_u][nova_cor].add(vertice_v)
-            self.vertices_vizinhos[vertice_v][nova_cor].add(vertice_u)
+            self.vertices_vizinhos[vertice_u][nova_cor] = vertice_v
+            self.vertices_vizinhos[vertice_v][nova_cor] = vertice_u
 
         self.arestas_cor[aresta] = nova_cor
         return cor_atual
@@ -205,5 +204,5 @@ class Vizing:
         
         vertices_vizinhos = {} # {vertice: {cor: {vizinhos}, ...}, ...}
         for vertice in vertices:
-            vertices_vizinhos[vertice] = {cor: set() for cor in cores}
+            vertices_vizinhos[vertice] = {cor: None for cor in cores}
         return vertices_vizinhos
