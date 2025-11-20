@@ -43,7 +43,7 @@ class Vizing:
         vertice_u, vertice_v = aresta
         
         fan = [vertice_v]
-        fan_set = set([vertice_v])
+        fan_set = {vertice_v}
         fan_cores_arestas = set()
         
         # Expande o fan conforme a definição do algoritmo
